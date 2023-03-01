@@ -20,27 +20,20 @@ class Context(object):
 
     _instance = None
 
-    # Whether or not to perform a dry run
-    dry_run: bool = False
-
     # Individual folders to be included as individual buckets
     folders: List[Tuple[str, str]] = []
 
-    # The backup home directory
+    # The backup home directory; config and other data will be stored here
     home: str = ""
 
-    # The log object
     log: Logfile
 
     history: Histfile
 
-    # The AWS access key
     aws_access_key: str = ""
 
-    # The AWS secret key
     aws_secret_access_key: str = ""
 
-    # The AWS region
     aws_region: RegionName = "eu-central-1"
 
     s3_client: S3Client
@@ -54,11 +47,6 @@ class Context(object):
                 description="Syncs image folders with aws s3 glacier.",
             )
             parser.add_argument(
-                "--dry-run",
-                action="store_true",
-                help="perform a trial run with no changes made",
-            )
-            parser.add_argument(
                 "--home",
                 default="~/.local/matricula-backup/",
                 help="where to store the config and cache files",
@@ -68,7 +56,6 @@ class Context(object):
             config_file = os.path.join(cls.home, config_file_name)
             cls.log = Logfile(os.path.join(cls.home, log_file_name))
             cls.history = Histfile(os.path.join(cls.home, history_file_name))
-            cls.dry_run = args.dry_run
             # Read config file
             try:
                 with open(config_file, "r") as f:

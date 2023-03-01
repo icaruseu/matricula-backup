@@ -1,3 +1,4 @@
+import os
 import sqlite3
 import urllib.parse
 from pathlib import Path
@@ -13,7 +14,9 @@ class FileCache:
 
     def __init__(self, name: str):
         file_name = urllib.parse.quote_plus(name) + ".db"
-        self.db_path = Path(context.home).joinpath(file_name)
+        parent = Path(context.home).joinpath("db")
+        os.makedirs(parent, exist_ok=True)
+        self.db_path = parent.joinpath(file_name)
         con = sqlite3.connect(self.db_path)
         con.cursor().execute("CREATE TABLE IF NOT EXISTS files (key TEXT PRIMARY KEY);")
         con.commit()

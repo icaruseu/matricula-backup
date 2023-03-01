@@ -1,3 +1,2 @@
 boto3[crt]
 boto3-stubs[s3]
-base58check
