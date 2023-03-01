@@ -16,10 +16,13 @@ class BackupLocation:
     path: str
 
     def __init__(self, name: str, path: str):
-        self.bucket = Bucket(name)
         self.file_cache = FileCache(name)
         self.name = name
         self.path = path
+        if not context.dry_run:
+            self.bucket = Bucket(name)
+        if context.reset:
+            self.file_cache.clear()
 
     def backup(self):
         context.log.info(f"Backing up {self.name}")
@@ -29,11 +32,13 @@ class BackupLocation:
         for cached in self.file_cache.list_all():
             if not Path(cached).is_file():
                 deleted.append(cached)
-                self.bucket.delete_file(cached)
+                if not context.dry_run:
+                    self.bucket.delete_file(cached)
         for file in Path(self.path).rglob("*"):
             if file.is_file():
                 if file.stat().st_ctime > context.history.get_last_backup(self.path):
-                    self.bucket.sync_file(file.as_posix())
+                    if not context.dry_run:
+                        self.bucket.sync_file(file.as_posix())
                     if self.file_cache.is_cached(file.as_posix()):
                         updated.append(file.as_posix())
                     else:

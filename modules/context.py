@@ -20,6 +20,12 @@ class Context(object):
 
     _instance = None
 
+    # Whether or not to perform a dry run
+    dry_run: bool = False
+
+    # If true, the backup will reset the history file and file cache before running the backup
+    reset: bool = False
+
     # Individual folders to be included as individual buckets
     folders: List[Tuple[str, str]] = []
 
@@ -47,6 +53,16 @@ class Context(object):
                 description="Syncs image folders with aws s3 glacier.",
             )
             parser.add_argument(
+                "--dry-run",
+                action="store_true",
+                help="perform a trial run with no changes made",
+            )
+            parser.add_argument(
+                "--reset",
+                action="store_true",
+                help="reset history and file cache",
+            )
+            parser.add_argument(
                 "--home",
                 default="~/.local/matricula-backup/",
                 help="where to store the config and cache files",
@@ -56,6 +72,8 @@ class Context(object):
             config_file = os.path.join(cls.home, config_file_name)
             cls.log = Logfile(os.path.join(cls.home, log_file_name))
             cls.history = Histfile(os.path.join(cls.home, history_file_name))
+            cls.dry_run = args.dry_run
+            cls.reset = args.reset
             # Read config file
             try:
                 with open(config_file, "r") as f:

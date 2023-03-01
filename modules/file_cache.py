@@ -22,6 +22,12 @@ class FileCache:
         con.commit()
         con.close()
 
+    def clear(self):
+        con = sqlite3.connect(self.db_path)
+        con.cursor().execute("DELETE FROM files;")
+        con.commit()
+        con.close()
+
     def insert_all(self, file_paths: List[str]):
         con = sqlite3.connect(self.db_path)
         cursor = con.cursor()

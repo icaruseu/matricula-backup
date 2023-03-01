@@ -1,5 +1,6 @@
 import contextlib
 import json
+import os
 
 
 class Histfile(contextlib.ExitStack):
@@ -14,6 +15,12 @@ class Histfile(contextlib.ExitStack):
                 return json.load(f)
         except:
             return {}
+
+    def clear(self):
+        try:
+            os.remove(self.hist_file)
+        except OSError:
+            pass
 
     def update(self, folder: str, last_backup: float):
         data = self.__read()
