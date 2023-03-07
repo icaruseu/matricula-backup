@@ -1,3 +1,4 @@
+import sys
 import time
 from pathlib import Path
 from typing import List
@@ -7,6 +8,11 @@ from modules.context import Context
 from modules.file_cache import FileCache
 
 context = Context()
+
+
+def safe_to_string(path: Path) -> str:
+    fse = sys.getfilesystemencoding()
+    return str(path).encode(fse, "surrogateescape").decode("ISO-8859-1")
 
 
 class BackupLocation:
@@ -36,13 +42,20 @@ class BackupLocation:
                     self.bucket.delete_file(cached)
         for file in Path(self.path).rglob("*"):
             if file.is_file():
-                if file.stat().st_ctime > context.history.get_last_backup(self.path):
-                    if not context.dry_run:
-                        self.bucket.sync_file(file.as_posix())
-                    if self.file_cache.is_cached(file.as_posix()):
-                        updated.append(file.as_posix())
-                    else:
-                        added.append(file.as_posix())
+                try:
+                    name = str(file)
+                    if file.stat().st_ctime > context.history.get_last_backup(
+                        self.path
+                    ):
+                        if not context.dry_run:
+                            self.bucket.sync_file(name)
+                        if self.file_cache.is_cached(name):
+                            updated.append(name)
+                        else:
+                            added.append(name)
+                except Exception as e:
+                    context.log.error(f"Failed to backup {safe_to_string(file)}: {e}")
+
         self.file_cache.insert_all(added)
         self.file_cache.delete_all(deleted)
         context.log.info(

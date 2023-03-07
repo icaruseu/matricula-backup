@@ -9,8 +9,8 @@ context = Context()
 
 from mypy_boto3_s3.literals import BucketLocationConstraintType
 
+PREFIX = "images--"
 EXPIRATION_NONCURRENT_DAYS = 180
-PREFIX = "img-backup--"
 STORAGE_CLASS = "DEEP_ARCHIVE"
 
 
