@@ -1,7 +1,7 @@
 import argparse
 import json
 import os
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 import boto3
 from mypy_boto3_s3.client import S3Client
@@ -41,6 +41,8 @@ class Context(object):
     aws_secret_access_key: str = ""
 
     aws_region: RegionName = "eu-central-1"
+
+    notification_webhook: Optional[str] = None
 
     s3_client: S3Client
 
@@ -99,6 +101,9 @@ class Context(object):
                         )
                         for folder in folders
                     ]
+                    cls.notification_webhook = config.get("notification", None).get(
+                        "webhook", None
+                    )
             except FileNotFoundError:
                 print(f"Error reading config file: '{args.config_file}'")
                 exit(1)
