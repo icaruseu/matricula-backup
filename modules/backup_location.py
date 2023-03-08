@@ -45,7 +45,7 @@ class BackupLocation:
     def backup(self):
         """Backs up the files in this location.
         1. It deletes files listed in the file cache but not on the file system anymore from the S3 bucket and file cacheself.
-        2. It uploads files new or changed files based on  to the S3 bucket and inserts them in the file cache.
+        2. It uploads files new or changed files based on their modification time to the S3 bucket and inserts them in the file cache.
         3. Any errors are logged
         4. If there were errors, a notification is sent to MS Teams
         """
