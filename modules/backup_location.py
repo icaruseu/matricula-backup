@@ -1,4 +1,3 @@
-import hashlib
 import sys
 import time
 from pathlib import Path
@@ -28,13 +27,6 @@ def safe_to_string(path: Path) -> str:
     return str(path).encode(fse, "surrogateescape").decode("ISO-8859-1")
 
 
-def calculate_checksum(file_path):
-    with open(file_path, "rb") as f:
-        data = f.read()
-        checksum = hashlib.md5(data).hexdigest()
-        return checksum
-
-
 class BackupLocation:
     """Describes a backup location, including the AWS S3 bucket and file cache."""
 
@@ -59,8 +51,8 @@ class BackupLocation:
         """
         context.log.info(f"Backing up {self.name}")
         deleted: List[str] = []
-        updated: List[Tuple[str, str]] = []
-        added: List[Tuple[str, str]] = []
+        updated: List[Tuple[str, float]] = []
+        added: List[Tuple[str, float]] = []
         errors: List[str] = []
         skipped: int = 0
         cache_count: int = 0
@@ -83,16 +75,16 @@ class BackupLocation:
                     print(f"\t{files_count} files processed")
                 try:
                     name = str(file)
-                    checksum = calculate_checksum(file)
-                    if self.file_cache.is_new_or_changed(name, checksum):
+                    timestamp = file.stat().st_ctime
+                    if self.file_cache.is_new_or_changed(name, timestamp):
                         if not context.dry_run:
                             if not bucket:
                                 bucket = Bucket(self.name)
                             bucket.sync_file(name)
                         if self.file_cache.is_cached(name):
-                            updated.append((name, checksum))
+                            updated.append((name, timestamp))
                         else:
-                            added.append((name, checksum))
+                            added.append((name, timestamp))
                     else:
                         skipped += 1
                 except Exception as e:
@@ -106,7 +98,7 @@ class BackupLocation:
         log_entry = f"\t{len(added)} [new]\t{len(updated)} [updated]\t{len(deleted)} [deleted]\t{len(errors)} [errors]\t{skipped} [skipped]"
         if errors:
             context.log.error(f"Failure: {log_entry}")
-            if context.notification_webhook:
+            if context.notification_webhook and not context.dry_run:
                 text = "\n".join(errors)
                 message = pymsteams.connectorcard(context.notification_webhook)
                 message.title(
