@@ -10,9 +10,9 @@ from mypy_boto3_s3.literals import RegionName
 from modules.histfile import Histfile
 from modules.logfile import Logfile
 
-config_file_name = "config.json"
-history_file_name = "history.json"
-log_file_name = "backup.log"
+CONFIG_FILE_NAME = "config.json"
+HISTORY_FILE_NAME = "history.json"
+LOG_FILE_NAME = "backup.log"
 
 
 class Context(object):
@@ -20,7 +20,7 @@ class Context(object):
 
     _instance = None
 
-    # Whether or not to perform a dry run
+    # Whether or not to perform a dry run; this means no data is uploaded to S3
     dry_run: bool = False
 
     # If true, the backup will reset the history file and file cache before running the backup
@@ -71,12 +71,11 @@ class Context(object):
             )
             args = parser.parse_args()
             cls.home = os.path.expanduser(args.home)
-            config_file = os.path.join(cls.home, config_file_name)
-            cls.log = Logfile(os.path.join(cls.home, log_file_name))
-            cls.history = Histfile(os.path.join(cls.home, history_file_name))
+            config_file = os.path.join(cls.home, CONFIG_FILE_NAME)
+            cls.log = Logfile(os.path.join(cls.home, LOG_FILE_NAME))
+            cls.history = Histfile(os.path.join(cls.home, HISTORY_FILE_NAME))
             cls.dry_run = args.dry_run
             cls.reset = args.reset
-            # Read config file
             try:
                 with open(config_file, "r") as f:
                     config = json.load(f)

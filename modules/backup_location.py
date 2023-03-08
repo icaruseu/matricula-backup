@@ -9,9 +9,9 @@ from modules.bucket import Bucket
 from modules.context import Context
 from modules.file_cache import FileCache
 
-context = Context()
+FILE_PROGRESS_LOG_THRESHOLD = 50000
 
-file_output_threshold = 50000
+context = Context()
 
 
 def safe_to_string(path: Path) -> str:
@@ -45,7 +45,7 @@ class BackupLocation:
     def backup(self):
         """Backs up the files in this location.
         1. It deletes files listed in the file cache but not on the file system anymore from the S3 bucket and file cacheself.
-        2. It uploads files new or changed files (different checksum) to the S3 bucket and inserts them in the file cache.
+        2. It uploads files new or changed files based on  to the S3 bucket and inserts them in the file cache.
         3. Any errors are logged
         4. If there were errors, a notification is sent to MS Teams
         """
@@ -60,7 +60,7 @@ class BackupLocation:
         bucket: Optional[Bucket] = None
         for cached, _ in self.file_cache.list_all():
             cache_count += 1
-            if cache_count % file_output_threshold == 0:
+            if cache_count % FILE_PROGRESS_LOG_THRESHOLD == 0:
                 print(f"\t{cache_count} cached files processed")
             if not Path(cached).is_file():
                 if not context.dry_run:
@@ -71,11 +71,11 @@ class BackupLocation:
         for file in Path(self.path).rglob("*"):
             if file.is_file():
                 files_count += 1
-                if files_count % file_output_threshold == 0:
+                if files_count % FILE_PROGRESS_LOG_THRESHOLD == 0:
                     print(f"\t{files_count} files processed")
                 try:
                     name = str(file)
-                    timestamp = file.stat().st_ctime
+                    timestamp = file.stat().st_mtime
                     if self.file_cache.is_new_or_changed(name, timestamp):
                         if not context.dry_run:
                             if not bucket:

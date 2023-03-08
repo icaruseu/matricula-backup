@@ -2,16 +2,15 @@ import re
 from typing import cast
 
 from botocore.exceptions import ClientError
+from mypy_boto3_s3.literals import BucketLocationConstraintType
 
 from modules.context import Context
-
-context = Context()
-
-from mypy_boto3_s3.literals import BucketLocationConstraintType
 
 PREFIX = "images--"
 EXPIRATION_NONCURRENT_DAYS = 180
 STORAGE_CLASS = "DEEP_ARCHIVE"
+
+context = Context()
 
 
 class Bucket:
