@@ -12,6 +12,8 @@ from modules.file_cache import FileCache
 
 context = Context()
 
+file_output_threshold = 5000
+
 
 def safe_to_string(path: Path) -> str:
     """Tries to convert a path to a string, replacing any invalid characters with a placeholder.
@@ -61,8 +63,13 @@ class BackupLocation:
         added: List[Tuple[str, str]] = []
         errors: List[str] = []
         skipped: int = 0
+        cache_count: int = 0
+        files_count: int = 0
         bucket: Optional[Bucket] = None
         for cached, _ in self.file_cache.list_all():
+            cache_count += 1
+            if cache_count % file_output_threshold == 0:
+                print(f"\t{cache_count} cached files processed")
             if not Path(cached).is_file():
                 if not context.dry_run:
                     if not bucket:
@@ -71,6 +78,9 @@ class BackupLocation:
                 deleted.append(cached)
         for file in Path(self.path).rglob("*"):
             if file.is_file():
+                files_count += 1
+                if files_count % file_output_threshold == 0:
+                    print(f"\t{files_count} files processed")
                 try:
                     name = str(file)
                     checksum = calculate_checksum(file)
