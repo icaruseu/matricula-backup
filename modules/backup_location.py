@@ -11,7 +11,7 @@ from modules.file_cache import FileCache
 
 context = Context()
 
-file_output_threshold = 5000
+file_output_threshold = 50000
 
 
 def safe_to_string(path: Path) -> str:
