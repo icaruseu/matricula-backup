@@ -108,4 +108,3 @@ class BackupLocation:
                 message.send()
         else:
             context.log.info(f"Success: {log_entry}")
-            context.history.update(self.path, time.time())

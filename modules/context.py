@@ -7,11 +7,9 @@ import boto3
 from mypy_boto3_s3.client import S3Client
 from mypy_boto3_s3.literals import RegionName
 
-from modules.histfile import Histfile
 from modules.logfile import Logfile
 
 CONFIG_FILE_NAME = "config.json"
-HISTORY_FILE_NAME = "history.json"
 LOG_FILE_NAME = "backup.log"
 
 
@@ -33,8 +31,6 @@ class Context(object):
     cache: str = ""
 
     log: Logfile
-
-    history: Histfile
 
     aws_access_key: str = ""
 
@@ -73,7 +69,6 @@ class Context(object):
             cls.cache = os.path.expanduser(args.cache)
             config_file = os.path.join(cls.cache, CONFIG_FILE_NAME)
             cls.log = Logfile(os.path.join(cls.cache, LOG_FILE_NAME))
-            cls.history = Histfile(os.path.join(cls.cache, HISTORY_FILE_NAME))
             cls.dry_run = args.dry_run
             cls.reset = args.reset
             try:

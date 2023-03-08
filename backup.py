@@ -13,7 +13,6 @@ if context.dry_run:
 
 if context.reset:
     context.log.info("Resetting history and file cache")
-    context.history.clear()
 
 for name, path in context.folders:
     BackupLocation(name, path).backup()
