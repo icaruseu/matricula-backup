@@ -14,7 +14,7 @@ class FileCache:
 
     def __init__(self, name: str):
         file_name = urllib.parse.quote_plus(name) + ".db"
-        parent = Path(context.home).joinpath("db")
+        parent = Path(context.cache).joinpath("db")
         os.makedirs(parent, exist_ok=True)
         self.db_path = parent.joinpath(file_name)
         con = sqlite3.connect(self.db_path)

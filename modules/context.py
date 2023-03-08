@@ -29,8 +29,8 @@ class Context(object):
     # Individual folders to be included as individual buckets
     folders: List[Tuple[str, str]] = []
 
-    # The backup home directory; config and other data will be stored here
-    home: str = ""
+    # The backup cache directory; config and other data will be stored here
+    cache: str = ""
 
     log: Logfile
 
@@ -65,15 +65,15 @@ class Context(object):
                 help="reset history and file cache",
             )
             parser.add_argument(
-                "--home",
+                "--cache",
                 default="~/.local/matricula-backup/",
                 help="where to store the config and cache files",
             )
             args = parser.parse_args()
-            cls.home = os.path.expanduser(args.home)
-            config_file = os.path.join(cls.home, CONFIG_FILE_NAME)
-            cls.log = Logfile(os.path.join(cls.home, LOG_FILE_NAME))
-            cls.history = Histfile(os.path.join(cls.home, HISTORY_FILE_NAME))
+            cls.cache = os.path.expanduser(args.cache)
+            config_file = os.path.join(cls.cache, CONFIG_FILE_NAME)
+            cls.log = Logfile(os.path.join(cls.cache, LOG_FILE_NAME))
+            cls.history = Histfile(os.path.join(cls.cache, HISTORY_FILE_NAME))
             cls.dry_run = args.dry_run
             cls.reset = args.reset
             try:
