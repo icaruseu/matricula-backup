@@ -1,6 +1,6 @@
 import sys
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import List, Optional
 
 import pymsteams
 
@@ -8,6 +8,7 @@ from modules.bucket import Bucket
 from modules.context import Context
 from modules.file_cache import FileCache
 
+BUCKET_PREFIX = "images--"
 FILE_PROGRESS_LOG_THRESHOLD = 50000
 
 context = Context()
@@ -45,14 +46,15 @@ def sizeof_fmt(size: float):
 class BackupLocation:
     """Describes a backup location, including the AWS S3 bucket and file cache."""
 
-    bucket: Bucket
     file_cache: FileCache
+    bucket_name: str
     name: str
     path: str
 
     def __init__(self, name: str, path: str):
         self.file_cache = FileCache(name)
         self.name = name
+        self.bucket_name = BUCKET_PREFIX + name
         self.path = path
         if context.reset:
             self.file_cache.clear()
@@ -82,7 +84,7 @@ class BackupLocation:
             if not Path(cached).is_file():
                 if not context.dry_run:
                     if not bucket:
-                        bucket = Bucket(self.name)
+                        bucket = Bucket(self.bucket_name, use_versioning=True)
                     bucket.delete_file(cached)
                 self.file_cache.delete_single(cached)
                 deleted += 1
@@ -98,8 +100,8 @@ class BackupLocation:
                     if self.file_cache.is_new_or_changed(name, timestamp):
                         if not context.dry_run:
                             if not bucket:
-                                bucket = Bucket(self.name)
-                            bucket.sync_file(name)
+                                bucket = Bucket(self.bucket_name, use_versioning=True)
+                            bucket.sync_file(name, use_glacier=True)
                         self.file_cache.upsert_single((name, timestamp))
                         if self.file_cache.is_cached(name):
                             updated += 1
