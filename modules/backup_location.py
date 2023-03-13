@@ -26,6 +26,22 @@ def safe_to_string(path: Path) -> str:
     return str(path).encode(fse, "surrogateescape").decode("ISO-8859-1")
 
 
+def sizeof_fmt(size: float):
+    """Converts a byte number to a human readable format
+
+    Args:
+        num The size of the file in byte: float
+
+    Returns:
+        String representation of the size
+    """
+    for unit in ["", "Ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi"]:
+        if abs(size) < 1024.0:
+            return f"{size:3.1f}{unit}B"
+        size /= 1024.0
+    return f"{size:.1f}YiB"
+
+
 class BackupLocation:
     """Describes a backup location, including the AWS S3 bucket and file cache."""
 
@@ -57,6 +73,8 @@ class BackupLocation:
         cache_count: int = 0
         files_count: int = 0
         bucket: Optional[Bucket] = None
+        total_size: int = 0
+        added_size: int = 0
         for cached, _ in self.file_cache.list_all():
             cache_count += 1
             if cache_count % FILE_PROGRESS_LOG_THRESHOLD == 0:
@@ -73,6 +91,7 @@ class BackupLocation:
                 if files_count % FILE_PROGRESS_LOG_THRESHOLD == 0:
                     print(f"\t{files_count} files processed")
                 try:
+                    total_size += file.stat().st_size
                     name = str(file)
                     timestamp = file.stat().st_mtime
                     if self.file_cache.is_new_or_changed(name, timestamp):
@@ -84,6 +103,7 @@ class BackupLocation:
                             updated.append((name, timestamp))
                         else:
                             added.append((name, timestamp))
+                            added_size += file.stat().st_size
                     else:
                         skipped += 1
                 except Exception as e:
@@ -94,7 +114,7 @@ class BackupLocation:
         self.file_cache.upsert_all(added)
         self.file_cache.upsert_all(updated)
         self.file_cache.delete_all(deleted)
-        log_entry = f"\t{len(added)} [new]\t{len(updated)} [updated]\t{len(deleted)} [deleted]\t{len(errors)} [errors]\t{skipped} [skipped]"
+        log_entry = f"{len(added)} ({sizeof_fmt(added_size)} of {sizeof_fmt(total_size)}) [new]; {len(updated)} [updated]; {len(deleted)} [deleted]; {len(errors)} [errors]; {skipped} [skipped]"
         if errors:
             context.log.error(f"Failure: {log_entry}")
             if context.notification_webhook and not context.dry_run:
