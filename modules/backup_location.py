@@ -65,16 +65,16 @@ class BackupLocation:
         4. If there were errors, a notification is sent to MS Teams
         """
         context.log.info(f"Backing up {self.name}")
-        deleted: List[str] = []
-        updated: List[Tuple[str, float]] = []
-        added: List[Tuple[str, float]] = []
-        errors: List[str] = []
-        skipped: int = 0
-        cache_count: int = 0
-        files_count: int = 0
         bucket: Optional[Bucket] = None
-        total_size: int = 0
+        errors: List[str] = []
+        added: int = 0
         added_size: int = 0
+        cache_count: int = 0
+        deleted: int = 0
+        skipped: int = 0
+        total: int = 0
+        total_size: int = 0
+        updated: int = 0
         for cached, _ in self.file_cache.list_all():
             cache_count += 1
             if cache_count % FILE_PROGRESS_LOG_THRESHOLD == 0:
@@ -84,12 +84,13 @@ class BackupLocation:
                     if not bucket:
                         bucket = Bucket(self.name)
                     bucket.delete_file(cached)
-                deleted.append(cached)
+                self.file_cache.delete_single(cached)
+                deleted += 1
         for file in Path(self.path).rglob("*"):
             if file.is_file():
-                files_count += 1
-                if files_count % FILE_PROGRESS_LOG_THRESHOLD == 0:
-                    print(f"\t{files_count} files processed")
+                total += 1
+                if total % FILE_PROGRESS_LOG_THRESHOLD == 0:
+                    print(f"\t{total} files processed")
                 try:
                     total_size += file.stat().st_size
                     name = str(file)
@@ -99,10 +100,11 @@ class BackupLocation:
                             if not bucket:
                                 bucket = Bucket(self.name)
                             bucket.sync_file(name)
+                        self.file_cache.upsert_single((name, timestamp))
                         if self.file_cache.is_cached(name):
-                            updated.append((name, timestamp))
+                            updated += 1
                         else:
-                            added.append((name, timestamp))
+                            added += 1
                             added_size += file.stat().st_size
                     else:
                         skipped += 1
@@ -110,11 +112,7 @@ class BackupLocation:
                     message = f"Failed to backup *{safe_to_string(file)}*: `{e}`"
                     context.log.error(message)
                     errors.append(message)
-
-        self.file_cache.upsert_all(added)
-        self.file_cache.upsert_all(updated)
-        self.file_cache.delete_all(deleted)
-        log_entry = f"{len(added)} ({sizeof_fmt(added_size)} of {sizeof_fmt(total_size)}) [new]; {len(updated)} [updated]; {len(deleted)} [deleted]; {len(errors)} [errors]; {skipped} [skipped]"
+        log_entry = f"{added} ({sizeof_fmt(added_size)} of {sizeof_fmt(total_size)}) [new]; {updated} [updated]; {deleted} [deleted]; {len(errors)} [errors]; {skipped} [skipped]"
         if errors:
             context.log.error(f"Failure: {log_entry}")
             if context.notification_webhook and not context.dry_run:

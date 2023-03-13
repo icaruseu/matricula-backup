@@ -30,6 +30,16 @@ class FileCache:
         con.commit()
         con.close()
 
+    def upsert_single(self, file: Tuple[str, float]):
+        con = sqlite3.connect(self.db_path)
+        cursor = con.cursor()
+        cursor.execute(
+            f"INSERT INTO files (key, timestamp) VALUES (:key, :timestamp) ON CONFLICT(key) DO UPDATE SET timestamp=:timestamp;",
+            {"key": file[0], "timestamp": file[1]},
+        )
+        con.commit()
+        con.close()
+
     def upsert_all(self, files: List[Tuple[str, float]]):
         con = sqlite3.connect(self.db_path)
         cursor = con.cursor()
@@ -49,6 +59,13 @@ class FileCache:
         result = cursor.fetchall()
         con.close()
         return [(row["key"], row["timestamp"]) for row in result]
+
+    def delete_single(self, file_path: str):
+        con = sqlite3.connect(self.db_path)
+        cursor = con.cursor()
+        cursor.execute("DELETE FROM files WHERE key = :key;", {"key": file_path})
+        con.commit()
+        con.close()
 
     def delete_all(self, file_paths: List[str]):
         con = sqlite3.connect(self.db_path)
