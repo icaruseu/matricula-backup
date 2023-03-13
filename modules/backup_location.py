@@ -69,30 +69,30 @@ class BackupLocation:
         context.log.info(f"Backing up {self.name}")
         bucket: Optional[Bucket] = None
         errors: List[str] = []
-        added: int = 0
+        added_count: int = 0
         added_size: int = 0
-        cache_count: int = 0
-        deleted: int = 0
-        skipped: int = 0
-        total: int = 0
+        cached_count: int = 0
+        deleted_count: int = 0
+        skipped_count: int = 0
+        total_count: int = 0
         total_size: int = 0
-        updated: int = 0
+        updated_count: int = 0
         for cached, _ in self.file_cache.list_all():
-            cache_count += 1
-            if cache_count % FILE_PROGRESS_LOG_THRESHOLD == 0:
-                print(f"\t{cache_count} cached files processed")
+            cached_count += 1
+            if cached_count % FILE_PROGRESS_LOG_THRESHOLD == 0:
+                print(f"\t{cached_count} cached files processed")
             if not Path(cached).is_file():
                 if not context.dry_run:
                     if not bucket:
                         bucket = Bucket(self.bucket_name, use_versioning=True)
                     bucket.delete_file(cached)
                 self.file_cache.delete_single(cached)
-                deleted += 1
+                deleted_count += 1
         for file in Path(self.path).rglob("*"):
             if file.is_file():
-                total += 1
-                if total % FILE_PROGRESS_LOG_THRESHOLD == 0:
-                    print(f"\t{total} files processed")
+                total_count += 1
+                if total_count % FILE_PROGRESS_LOG_THRESHOLD == 0:
+                    print(f"\t{total_count} files processed")
                 try:
                     total_size += file.stat().st_size
                     name = str(file)
@@ -104,17 +104,17 @@ class BackupLocation:
                             bucket.sync_file(name, use_glacier=True)
                         self.file_cache.upsert_single((name, timestamp))
                         if self.file_cache.is_cached(name):
-                            updated += 1
+                            updated_count += 1
                         else:
-                            added += 1
+                            added_count += 1
                             added_size += file.stat().st_size
                     else:
-                        skipped += 1
+                        skipped_count += 1
                 except Exception as e:
                     message = f"Failed to backup *{safe_to_string(file)}*: `{e}`"
                     context.log.error(message)
                     errors.append(message)
-        log_entry = f"{added} ({sizeof_fmt(added_size)} of {sizeof_fmt(total_size)}) [new]; {updated} [updated]; {deleted} [deleted]; {len(errors)} [errors]; {skipped} [skipped]"
+        log_entry = f"{added_count} ({sizeof_fmt(added_size)} of {sizeof_fmt(total_size)}) [new]; {updated_count} [updated]; {deleted_count} [deleted]; {len(errors)} [errors]; {skipped_count} [skipped]"
         if errors:
             context.log.error(f"Failure: {log_entry}")
             if context.notification_webhook and not context.dry_run:
