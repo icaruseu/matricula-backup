@@ -18,7 +18,6 @@ class Bucket:
     def __init__(self, name: str, use_versioning: bool):
         name = re.sub(r"[^a-zA-Z0-9]", "-", name).lower()
         self.name = name
-        print(self.name)
         # Create bucket if it doesn't exist
         try:
             context.s3_client.head_bucket(Bucket=name)
