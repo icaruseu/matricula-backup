@@ -11,17 +11,17 @@ class LogLevel(str, Enum):
     err = "ERR"
 
 
-class Logfile(contextlib.ExitStack):
-    log_file: TextIOWrapper
+class Logfile:
+    log_file: str
 
-    def __init__(self, log_file: str, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.log_file = self.enter_context(open(log_file, "a"))
+    def __init__(self, log_file: str):
+        self.log_file = log_file
 
     def __write(self, message: str, level: LogLevel = LogLevel.info):
         message = f"[{datetime.now()}] [{level}] {message}"
         print(message)
-        self.log_file.write(message + "\n")
+        with open(self.log_file, "a") as f:
+            f.write(message + "\n")
 
     def newline(self):
         self.info("\n")
